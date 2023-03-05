@@ -7,7 +7,7 @@ readme = "README.md"
 packages = [{include = "telegram_analysis"}]
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = ">=3.10,<3.12"
 telethon = "^1.27.0"
 beanie = "^1.17.0"
 numpy = "^1.24.2"
@@ -16,7 +16,14 @@ seaborn = "^0.12.2"
 matplotlib = "^3.6.3"
 tqdm = "^4.64.1"
 statsmodels = "^0.13.5"
+aiofiles = "^23.1.0"
+cryptg = "^0.4.0"
+fastapi = "^0.92.0"
+uvicorn = "^0.20.0"
 
+
+[tool.poetry.group.dev.dependencies]
+pandas-stubs = "^1.5.3.230214"
 
 [build-system]
 requires = ["poetry-core"]

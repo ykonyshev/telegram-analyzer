@@ -16,7 +16,7 @@ class MaskCoords(BaseModel):
 class Sticker(BaseModel):
     alt: str
     mask: bool | None
-    # TODO: Implament sickersets
+    # TODO: Implament sickersets and maybe more data from there on.
     # stickerset: InputStickerSet
     mask_coords: MaskCoords | None
 

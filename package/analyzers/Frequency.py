@@ -5,6 +5,7 @@ from typing import Any
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
+from bson import ObjectId
 from matplotlib import ticker
 
 from package.analyzers import BaseAnalyzer
@@ -12,19 +13,28 @@ from package.models.Message import Message
 from package.MyClient import MyClient
 
 
-class FrequencyAnalyzer(BaseAnalyzer[dict[str, Any]]):
-    def __init__(self, for_chats: list[int], client: MyClient) -> None:
+class FrequencyAnalyzer(BaseAnalyzer[Any]):
+    def __init__(self, for_chats: list[ObjectId], client: MyClient) -> None:
         super().__init__(for_chats, client)
 
 
-    async def _fetch_data(
+    async def _compile_df(self, selected_ids: list[ObjectId]) -> pd.DataFrame:
+        data = await self._gather_data(selected_ids)
+        return pd.DataFrame.from_records(
+            data
+        )
+
+
+    async def _gather_data(
         self,
-        selected_ids: list[int]
+        selected_ids: list[ObjectId]
     ):
+        await super()._gather_data(selected_ids)
+
         result = await Message.aggregate(
             [{
                 "$match": {
-                    "raw_data.peer_id.user_id": {
+                    "chat_id": {
                         "$in": selected_ids
                     }
                 },
@@ -66,14 +76,11 @@ class FrequencyAnalyzer(BaseAnalyzer[dict[str, Any]]):
         return result
 
 
-    async def _compile_df(self, selected_ids: list[int]):
-        data = await self._fetch_data(selected_ids)
-        return pd.DataFrame.from_records(
-            data
-        )
-
-
-    async def chart(self, save_to: Path, selected_ids: list[int] | None = None) -> None:
+    async def chart(
+        self,
+        save_to: Path,
+        selected_ids: list[ObjectId] | None = None
+    ) -> None:
         if selected_ids is None:
             selected_ids = self.for_chats
 

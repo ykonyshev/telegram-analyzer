@@ -9,9 +9,30 @@ def get_args() -> MyNamespace:
 
     ap.add_argument(
         'ids',
-        nargs='*',
+        nargs='+',
         type=int,
         help="User IDs to generate reports for."
+    )
+
+    ap.add_argument(
+        '--skip-gather',
+        action='store_true',
+        default=False,
+        help='Skip the data collection process and go off the already present data'
+    )
+
+    ap.add_argument(
+        '--gather-limit',
+        type=int,
+        default=None,
+        help='A limit to the number of messages, the script will process'
+    )
+
+    ap.add_argument(
+        '--media-folder',
+        default=Path('./media'),
+        type=Path,
+        help='A derictory where the media data will be stored'
     )
 
     ap.add_argument(

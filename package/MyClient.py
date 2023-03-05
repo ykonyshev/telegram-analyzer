@@ -1,14 +1,18 @@
-import tqdm
-from telethon import TelegramClient, types
-from telethon.hints import EntityLike
+import asyncio
+import typing
+from pathlib import Path
+from typing import AsyncIterator, cast
 
-from package.models import Message
-from package.models.Chat import Chat
-from package.models.Message.MessageMedia import SupportedMedia
+from telethon import TelegramClient, functions, types
+
+from package.config import config
+
+CHUNK_SIZE = 100
 
 
 class MyClient(TelegramClient):
     _current_id: int | None = None
+
 
     async def current_id(self):
         if self._current_id is not None:
@@ -22,84 +26,69 @@ class MyClient(TelegramClient):
 
         return self._current_id
 
-    async def gather_messages(
-        self,
-        from_entity: EntityLike,
-        limit: int
-    ) -> list[Message.Message]:
-        current_dialog = await self.get_input_entity(from_entity)
-        if not isinstance(current_dialog, types.InputPeerUser):
-            return []
-
-        chat = await Chat.find_one(
-            Chat.with_id == current_dialog.user_id
+    async def start(self) -> None:
+        # * The function returns a coro, but the types are wrong
+        await cast(
+            typing.Coroutine[None, None, MyClient],
+            super().start(
+                phone=lambda: config.telegram_api.phone,
+                password=lambda: config.telegram_api.mfa_password
+            )
         )
 
-        if chat is None:
-            chat = Chat(
-                with_id=current_dialog.user_id
+
+    async def get_history(
+        self,
+        peer: types.TypeInputPeer,
+        total: int,
+        messages_hash=0
+    ) -> AsyncIterator[types.messages.MessagesSlice]:
+        wait_time = 0 if total < CHUNK_SIZE * 15 else 1
+        for offset in range(0, total // CHUNK_SIZE + 1):
+            response = await self(
+                functions.messages.GetHistoryRequest(
+                    peer=peer,
+                    limit=CHUNK_SIZE,
+                    add_offset=offset * CHUNK_SIZE,
+                    hash=messages_hash,
+                    offset_date=None, offset_id=0,
+                    max_id=0, min_id=0
+                )
             )
 
-            await chat.create()
+            await asyncio.sleep(wait_time)
 
-        messages = self.iter_messages(
-            from_entity,
-            limit=limit
+            response = cast(
+                types.messages.MessagesSlice,
+                response
+            )
+
+            yield response
+
+
+    async def total_messages_count(
+        self,
+        peer: types.TypeInputPeer
+    ):
+        history = await anext(self.get_history(
+            peer,
+            1
+        ))
+
+        return history.count
+
+
+    async def download_media(
+        self,
+        media: types.MessageMediaDocument,
+        to: Path
+    ) -> Path | None:
+        download_result = await super().download_media(
+            media, # type: ignore
+            str(to),
         )
 
-        current_id = await self.current_id()
-        db_messages = []
-        part = []
+        if isinstance(download_result, str):
+            return Path(download_result)
 
-        # TODO: Maybe it will be faster to load everything in and then create tasks
-        # TODO: More optimization may make sense, but after check if everying is there
-        message: types.Message
-        with tqdm.tqdm(total=limit) as pbar:
-            async for message in messages:
-                pbar.update(1)
-                predicate = await Message.Message.find_one(
-                    Message.Message.chat_id == chat.id,
-                    Message.Message.raw_data.id == message.id,
-                    Message.Message.from_perspective == current_id
-                )
-
-                if predicate is not None:
-                    db_messages.append(predicate)
-                    continue
-
-                raw_api_data = message.to_dict()
-
-                # TODO Implement other media
-                if isinstance(message.media, SupportedMedia):
-                    media_data = raw_api_data['media']
-                else:
-                    media_data = None
-
-                raw_api_data['media'] = media_data
-
-                raw_classes = {
-                    types.MessageService: Message.TelegramServiceMessage,
-                    types.Message: Message.TelegramMessage
-                }
-
-                # FIXME
-                if chat.id is None:
-                    continue
-
-                new_message = Message.Message(
-                    chat_id=chat.id,
-                    from_perspective=current_id,
-                    raw_data=raw_classes[type(message)](**raw_api_data)
-                )
-
-                part.append(new_message)
-                if len(part) >= 100:
-                    await Message.Message.insert_many(part)
-
-                    db_messages.extend(part)
-                    part = []
-
-            await Message.Message.insert_many(part)
-            db_messages.extend(part)
-
-            return db_messages
+        return None

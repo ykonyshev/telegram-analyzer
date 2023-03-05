@@ -3,25 +3,29 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
+from bson import ObjectId
 from telethon import types as tg_types
 
 from package.analyzers import BaseAnalyzer
+from package.models.Chat import Chat
 from package.models.Message import Message
 from package.MyClient import MyClient
+from package.utils.format_user import format_user
 
 
 # TODO: Adjust for local time
 class DayTimeAnalyzer(BaseAnalyzer):
-    def __init__(self, for_chats: list[int], client: MyClient) -> None:
-
+    def __init__(self, for_chats: list[ObjectId], client: MyClient) -> None:
         super().__init__(for_chats, client)
 
 
-    async def _fetch_data(self, selected_ids: list[int]):
+    async def _gather_data(self, selected_ids: list[ObjectId]) :
+        await super()._gather_data(selected_ids)
+
         result = await Message.aggregate([
             {
                 "$match": {
-                    "raw_data.peer_id.user_id": {
+                    "chat_id": {
                         "$in": selected_ids
                     }
                 }
@@ -64,21 +68,28 @@ class DayTimeAnalyzer(BaseAnalyzer):
         return result
 
 
-    async def _compile_df(self, selected_ids) -> pd.DataFrame:
-        data = await self._fetch_data(selected_ids)
+    async def _compile_df(self, selected_ids: list[ObjectId]) -> pd.DataFrame:
+        data = await self._gather_data(selected_ids)
         return pd.DataFrame.from_records(
             data
         )
 
 
     async def bar_chart(self, save_to: Path):
-        # TODO: Map the users onto the db...
         all_participants: list[tg_types.User] = []
         current_id = await self.client.current_id()
 
         for entity_id in [*self.for_chats, current_id]:
+            # TODO: Come up with a better way to handle the ids and Chat objects to avoid code repetition
+            full_chat = await Chat.find_one(
+                Message.id == entity_id
+            )
+
+            if full_chat is None:
+                continue
+
             part = await self.client.iter_participants(
-                entity_id
+                full_chat.tg_id
             ).collect()
 
             all_participants.extend(part)
@@ -89,16 +100,7 @@ class DayTimeAnalyzer(BaseAnalyzer):
                 if participant.id != user_id:
                     continue
 
-                part = None
-                if participant.username is not None:
-                    part = participant.username
-                elif participant.first_name is not None:
-                    part = participant.first_name
-
-                if part is None:
-                    continue
-
-                return f'{part} <{user_id}>'
+                return format_user(participant)
 
             return str(user_id)
 
@@ -125,7 +127,7 @@ class DayTimeAnalyzer(BaseAnalyzer):
         plt.close(ax.get_figure())
 
 
-    async def chart(self, save_to: Path, selected_ids: list[int] | None = None):
+    async def chart(self, save_to: Path, selected_ids: list[ObjectId] | None = None):
         if selected_ids is None:
             selected_ids = self.for_chats
 

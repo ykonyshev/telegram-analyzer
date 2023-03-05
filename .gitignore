@@ -1,6 +1,12 @@
 .venv
-anon.session
+
+*.session
+*.session-journal
+runtime.log
+
 graphs
+media
+test.ipynb
 
 __pycache__
 .ruff_cache

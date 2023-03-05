@@ -84,3 +84,5 @@ class MessageMediaDocument(BaseModel):
     nopremiun: bool | None
     document: Document | None
     ttl_seconds: float | None
+
+MessageMedia = MessageMediaDocument | MessageMediaPhoto
