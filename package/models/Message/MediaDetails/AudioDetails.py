@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from beanie import Insert, SaveChanges, Update, before_event
 from pydantic import BaseModel
 from telethon import types
 
@@ -14,20 +15,30 @@ class AudioContents(BaseModel):
     language: str
 
 
+class FileHandle(BaseModel):
+    path: Path
+    document_id: int
+
+
+    @property
+    def is_downloaded(self) -> bool:
+        return self.path.exists()
+
+
+    class Settings:
+        bson_encodes = {
+            "path": str
+        }
+
+
 class AudioDetails(BaseModel):
     duration: int
-    document_id: int | None
     voice: bool | None
     text_contents: AudioContents | None = None
+    file_handle: FileHandle | None
 
 
-class AudioHandler:
-    audio_details: AudioDetails
-    client: MyClient
-    download_folder: Path
-    document: types.Document
-
-
+class AudioFileHandler:
     def __init__(
         self,
         client: MyClient,
@@ -45,26 +56,31 @@ class AudioHandler:
             return
 
         self.document = document
-        self.local_path = self.download_folder.joinpath(
-            f'{document.id}'
+        local_path = self.download_folder.joinpath(
+            f'{document.id}.ogg'
         ).absolute()
 
+        self.file_handle = FileHandle(
+            path=local_path,
+            document_id=document.id
+        )
+
         self.audio_details = AudioDetails(
+            file_handle=self.file_handle,
             duration=audio_attribute.duration,
-            document_id=document.id,
             voice=audio_attribute.voice
         )
 
 
     @property
     def is_downloaded(self) -> bool:
-        return self.local_path.exists()
+        return self.file_handle.is_downloaded
 
 
     async def download(
         self
     ):
-        logger.debug(f'Downloading document, {self.document.id = } to {self.local_path} ({self.document.size / 1024}kB)')
+        logger.debug(f'Downloading document, {self.document.id = } to {self.file_handle.path} ({self.document.size / 1024}kB)')
 
         if not self.is_downloaded:
             # * Ignoring a type error as the typing is wrong in the function and Document can also be provided.
@@ -72,11 +88,11 @@ class AudioHandler:
 
             download_result = await self.client.download_media(
                 self.media, # type: ignore
-                self.local_path
+                self.file_handle.path
             )
 
             if download_result is None:
                 logger.error(f'Media for {self.document.id = } doesn\'t seem to be a file')
                 return
 
-        logger.debug(f'Finished downloading audio from {self.document.id = } to {self.local_path}')
+        logger.debug(f'Finished downloading audio from {self.document.id = } to {self.file_handle.path}')

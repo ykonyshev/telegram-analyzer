@@ -25,6 +25,7 @@ matplotlib.use('Agg')
 # TODO: Implament more of the api in the orm (like users and sticketsets and so on)
 # TODO: Support groups
 # TODO: Decide which API is the most suitable. Whether to let the user choose when to run data collection or just run inside the context manager
+# TODO: Make the script work with export files for both telegram chats as well as whatsapp
 
 # * Graph ideas
 # TODO: By user word usage frequency
@@ -60,6 +61,7 @@ async def main():
         await reporter.generate_full_report()
         if len(args.ids) >= 1 and args.generate_individual:
             await reporter.generate_individual()
+
 
 
 if __name__ == "__main__":

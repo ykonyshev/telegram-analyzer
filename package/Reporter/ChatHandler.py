@@ -8,7 +8,7 @@ from telethon import types
 from package.logging import get_logger
 from package.models import Message
 from package.models.Chat import Chat
-from package.models.Message.MediaDetails.AudioDetails import AudioHandler
+from package.models.Message.MediaDetails.AudioDetails import AudioFileHandler
 from package.models.Message.MessageMedia import SupportedMedia
 from package.MyClient import MyClient
 from package.utils.format_user import format_user
@@ -106,7 +106,7 @@ class ChatHandler:
                 return message_type, media_details
 
             message_type = Message.MessageType.audio
-            handler = AudioHandler(
+            handler = AudioFileHandler(
                 self.client,
                 audio_folder,
                 media,
