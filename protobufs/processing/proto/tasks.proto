@@ -1,0 +1,40 @@
+syntax = "proto3";
+import "google/protobuf/empty.proto";
+
+
+message Task {
+    message AudioDetails {
+        bytes file_contents = 1;
+        int64 document_id = 2;
+        int32 duration = 3;
+    }
+
+    bytes id = 1;
+
+    // TODO: Implement support for multiple languages within the same chat
+    string audio_language = 2;
+    repeated AudioDetails audio_files = 3;
+    int64 remaining_count = 4;
+}
+
+
+message SubmitTaskRequest {
+    message AudioContents {
+        int64 document_id = 1;
+        string language = 2;
+        string text = 3;
+    }
+
+    bytes task_id = 1;
+    string model_used = 2;
+    repeated AudioContents details = 3;
+}
+
+message SubmitTaskResponse {
+    bool ok = 1;
+}
+
+service TasksManager {
+    rpc GetTask (google.protobuf.Empty) returns (Task);
+    rpc SubmitTask (SubmitTaskRequest) returns (SubmitTaskResponse);
+}

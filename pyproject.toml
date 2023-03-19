@@ -10,7 +10,7 @@ packages = [{include = "telegram_analysis"}]
 python = ">=3.10,<3.12"
 telethon = "^1.27.0"
 beanie = "^1.17.0"
-numpy = "^1.24.2"
+numpy = "^1.23.0"
 pandas = "^1.5.3"
 seaborn = "^0.12.2"
 matplotlib = "^3.6.3"
@@ -20,6 +20,15 @@ aiofiles = "^23.1.0"
 cryptg = "^0.4.0"
 fastapi = "^0.92.0"
 uvicorn = "^0.20.0"
+grpcio = "^1.51.3"
+grpcio-tools = "^1.51.3"
+setuptools-rust = {version = "^1.5.2", extras = ["processing"]}
+llvmlite = {version = "^0.39.1", extras = ["processing"]}
+numba = {version = "^0.56.4", extras = ["processing"]}
+openai-whisper = {version = "^20230308", extras = ["processing"]}
+polyglot = "^16.7.4"
+pyicu = "^2.10.2"
+pycld2 = "^0.41"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -32,6 +41,37 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.ruff]
 line-length = 88
+force-exclude = true
+exclude = [
+    "proto"
+]
+
+select = ["A", "B", "C", "E", "F", "B", "I", "ANN", "E", "C90", "C4", "SLF", "SIM", "ERA", "PL", "PLE", "TRY"]
+ignore = [
+    "ANN101", # self typing in classes
+    "ANN102", # cls typing to @classmethod
+    "TRY003", # long exception messages
+    "A003", # class attribute shadowing
+    "B905", # zip() without strict=
+    "I001", # unsorted imports
+    "PLR0913" # too many function arguments
+]
 
 [tool.ruff.mccabe]
 max-complexity = 10
+
+[tool.pyright]
+include = ["src"]
+exclude = [
+    "**/node_modules",
+    "**/__pycache__",
+]
+
+ignore = ["**/proto"]
+
+reportMissingImports = true
+strictListInference = true
+strictDictionaryInference = true
+reportMissingParameterType = true
+strictSetInference = true
+reportMissingTypeStubs = false
