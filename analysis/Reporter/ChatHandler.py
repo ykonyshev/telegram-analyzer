@@ -1,9 +1,9 @@
 import asyncio
 from pathlib import Path
 from typing import AsyncIterable, Awaitable
+from langdetect import detect_langs
 
 import tqdm
-from polyglot.detect import Detector
 from telethon import types
 
 from analysis.logging import get_logger
@@ -93,12 +93,10 @@ class ChatHandler:
             total_length += sum(map(len, message.words))
 
         language_codes: set[str] = set()
-        for language in Detector('. '.join(texts)).languages:
-            if language.read_bytes <= 0:
-                continue
-
-            logger.info(f'Detected language: {language.name} ({language.code}), {language.confidence} confident')
-            language_codes.add(language.code)
+        merged_texts = '. '.join(texts)
+        for language in detect_langs(merged_texts):
+            logger.info(f'Detected language: {language.lang}, {language.prob} confident')
+            language_codes.add(language.lang)
 
         return language_codes
 
@@ -131,7 +129,7 @@ class ChatHandler:
             if len(audio_attributes) == 0:
                 return message_type, media_details
             elif len(audio_attributes) > 1:
-                logger.error(f'Document {document.id = } seems to be having more than one audio attrbute, you should look into it, skipping the document')
+                logger.error(f'Document {document.id = } seems to be having more than one audio attribute, you should look into it, skipping the document')
 
                 return message_type, media_details
 

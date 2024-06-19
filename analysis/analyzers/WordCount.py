@@ -66,6 +66,7 @@ class WordCountAnalyzer(BaseAnalyzer[Message]):
             self.parse_text(message)
 
         # TODO: Account for cases, where there is no data
+        # FIXME: Seems to throw an error when not run with --skip-gather for the first time
         words, message_types = list(zip(*self._accumulator.keys()))
         base_df = pd.DataFrame(
             {

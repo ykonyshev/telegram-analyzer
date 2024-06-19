@@ -26,9 +26,7 @@ setuptools-rust = {version = "^1.5.2", extras = ["processing"]}
 llvmlite = {version = "^0.39.1", extras = ["processing"]}
 numba = {version = "^0.56.4", extras = ["processing"]}
 openai-whisper = {version = "^20230308", extras = ["processing"]}
-polyglot = "^16.7.4"
-pyicu = "^2.10.2"
-pycld2 = "^0.41"
+langdetect = "^1.0.9"
 
 
 [tool.poetry.group.dev.dependencies]

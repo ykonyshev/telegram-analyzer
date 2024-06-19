@@ -20,6 +20,8 @@ from processing.proto.tasks_pb2_grpc import TasksManagerStub
 # TODO: Handle possible errors, most notable the case when there are no tasks left
 # TODO: Finish the current task on interrupt
 
+MAX_MESSAGE_LENGTH = 512 * 1024 ** 2  # 512MB
+
 logger = get_logger(__name__)
 
 
@@ -51,7 +53,13 @@ async def run(
         logger.error(f'Could not load model {preferred_model_name}')
         return
 
-    async with grpc.insecure_channel(server_address) as channel:
+    async with grpc.insecure_channel(
+        server_address,
+        options=[
+            ('grpc.max_send_message_length', MAX_MESSAGE_LENGTH),
+            ('grpc.max_receive_message_length', MAX_MESSAGE_LENGTH),
+        ],
+    ) as channel:
         logger.info(f'Established connection with {server_address}')
         stub = TasksManagerStub(channel)
 

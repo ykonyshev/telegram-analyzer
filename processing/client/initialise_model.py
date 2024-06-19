@@ -54,8 +54,6 @@ def get_appropriate_params(
 
     return model_name, device
 
-class Test(whisper.Whisper):
-    ...
 
 def setup_model(
     model_name: str,

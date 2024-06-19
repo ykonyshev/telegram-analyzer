@@ -8,6 +8,7 @@ from bson import ObjectId
 from google.protobuf.empty_pb2 import Empty
 from grpc import StatusCode
 
+from analysis.logging import get_logger
 from analysis.models.Chat import Chat
 from analysis.models.Message import Message, MessageType
 from analysis.models.Message.MediaDetails.AudioDetails import (
@@ -24,6 +25,8 @@ from processing.proto.tasks_pb2 import Task as ResponseTask
 from processing.proto.tasks_pb2_grpc import (
     TasksManagerServicer as BaseTasksManagerServicer,
 )
+
+logger = get_logger(__name__)
 
 
 async def open_file(
@@ -143,6 +146,7 @@ class TasksManagerServicer(BaseTasksManagerServicer):
             remaining_count=found_count - 1
         )
 
+        logger.info(f'Created and sent a task for {message.id = }, {task.id = }')
         return response_task
 
 
@@ -193,6 +197,7 @@ class TasksManagerServicer(BaseTasksManagerServicer):
         await message_predicate.save()
         await Task.delete(predicate)
 
+        logger.info(f'Got tasks results for {predicate.id = }, {message_predicate.id = }')
         return SubmitTaskResponse(
             ok=True
         )

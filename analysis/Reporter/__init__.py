@@ -89,7 +89,7 @@ class Reporter:
         await asyncio.gather(*tasks)
 
 
-    async def __aenter__(self) -> "Reporter":
+    async def __aenter__(self) -> 'Reporter':
         await self.setup()
         if not self.skip_gather:
             await self._gather()

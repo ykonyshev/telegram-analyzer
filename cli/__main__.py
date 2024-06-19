@@ -10,7 +10,10 @@ from analysis.models import init_connection
 from analysis.Reporter import Reporter
 from cli.get_args import get_args
 
-# TODO: Better project structure is never spare. The modules are all over the place, to be honest
+# TODO: Better project structure is never spare. The modules are all over the place, to be honest. Naming doesn't follow pep8
+# TODO: Better logging setup (use structlog), logs should be saved to a separate folder
+# TODO: Sessions also should not be at the top level of the project
+# TODO: media folder into .cache folder
 # TODO: Subcommands code separation, a more robust subcommands system
 # TODO: Separate gather and report
 # TODO: Config file param to load arbiturary configs and not only in the project file

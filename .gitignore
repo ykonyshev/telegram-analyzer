@@ -4,9 +4,10 @@
 *.session-journal
 runtime.log
 
-graphs
-media
-test.ipynb
+/graphs/
+/media/
+/models/
+/test.ipynb
 
 __pycache__
 .ruff_cache
